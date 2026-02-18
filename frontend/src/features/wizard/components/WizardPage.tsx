@@ -35,10 +35,11 @@ export default function WizardPage() {
         handleBack,
         handleAddMore,
         handleClearAll,
-        saveToSupabase,
+        saveToBackend,
         isSaving,
         lastSaved,
-        canSave
+        canSave,
+        savedProjectId
     } = useWizard();
 
     return (
@@ -62,7 +63,7 @@ export default function WizardPage() {
                                 progressPercent={progressPercent}
                                 handleBack={handleBack}
                                 onGoToWelcome={() => setStep(0)}
-                                onSave={saveToSupabase}
+                                onSave={saveToBackend}
                                 isSaving={isSaving}
                                 lastSaved={lastSaved}
                                 canSave={canSave}
@@ -103,6 +104,8 @@ export default function WizardPage() {
                                         formData={formData}
                                         measurements={measurements}
                                         totalUnits={totalUnits}
+                                        projectId={savedProjectId}
+                                        onSave={saveToBackend}
                                         onBackToStart={() => setStep(0)}
                                     />
                                 )}

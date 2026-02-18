@@ -4,6 +4,23 @@ import { authenticateToken, AuthRequest, isAdmin } from '../middleware/auth';
 
 const router = Router();
 
+// Obtener estadísticas globales (Solo Admin)
+router.get('/stats', authenticateToken, isAdmin, async (req: AuthRequest, res) => {
+    try {
+        const [users]: any = await query('SELECT COUNT(*) as count FROM users');
+        const [projects]: any = await query('SELECT COUNT(*) as count FROM projects');
+        const [measurements]: any = await query('SELECT COUNT(*) as count FROM measurements');
+
+        res.json({
+            users: users.count,
+            projects: projects.count,
+            measurements: measurements.count
+        });
+    } catch (error) {
+        res.status(500).json({ message: 'Error obteniendo estadísticas' });
+    }
+});
+
 // Listar todos los usuarios
 router.get('/users', authenticateToken, isAdmin, async (req: AuthRequest, res) => {
     try {
@@ -23,6 +40,18 @@ router.put('/users/:id/role', authenticateToken, isAdmin, async (req: AuthReques
         res.json({ message: 'Rol actualizado' });
     } catch (error) {
         res.status(500).json({ message: 'Error actualizando rol' });
+    }
+});
+
+// Activar/Desactivar usuario
+router.put('/users/:id/active', authenticateToken, isAdmin, async (req: AuthRequest, res) => {
+    try {
+        const { id } = req.params;
+        const { is_active } = req.body;
+        await query('UPDATE users SET is_active = ? WHERE id = ?', [is_active ? 1 : 0, id]);
+        res.json({ message: 'Estado de usuario actualizado' });
+    } catch (error) {
+        res.status(500).json({ message: 'Error actualizando estado del usuario' });
     }
 });
 

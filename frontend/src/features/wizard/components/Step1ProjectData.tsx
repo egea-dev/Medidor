@@ -9,7 +9,7 @@ interface Step1Props {
 
 export const Step1ProjectData: React.FC<Step1Props> = ({ formData, setFormData }) => {
     const handleChange = (field: keyof FormData, value: string) => {
-        setFormData(prev => ({ ...prev, [field]: value }));
+        setFormData((prev: FormData) => ({ ...prev, [field]: value }));
     };
 
     const inputBaseClass = "w-full p-2 md:p-2.5 text-sm border rounded-lg outline-none transition-colors duration-200 placeholder-gray-400";

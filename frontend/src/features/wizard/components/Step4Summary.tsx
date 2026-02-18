@@ -7,6 +7,8 @@ interface Step4Props {
     formData: FormData;
     measurements: Measurement[];
     totalUnits: number;
+    projectId?: string | null;
+    onSave?: () => Promise<void>;
     onBackToStart?: () => void;
 }
 
@@ -16,6 +18,8 @@ export const Step4Summary: React.FC<Step4Props> = ({
     formData,
     measurements,
     totalUnits,
+    projectId,
+    onSave,
     onBackToStart
 }) => {
     const [isGenerating, setIsGenerating] = useState(false);
@@ -57,13 +61,21 @@ export const Step4Summary: React.FC<Step4Props> = ({
     const handleSaveTask = async () => {
         setIsGenerating(true);
         try {
-            await pdfService.generateProjectReport(
-                formData,
-                getSortedMeasurements(),
-                `Mediciones_${formData.location}_${sortBy}_${Date.now()}.pdf`
-            );
-        } catch (error) {
-            alert("Error al generar el PDF");
+            let pid = projectId;
+            if (!pid && onSave) {
+                console.log("Proyecto no guardado. Guardando antes de generar PDF...");
+                await onSave();
+                // El padre debería actualizar projectId, pero si no, intentamos obtenerlo del localStorage
+                pid = localStorage.getItem('egea_saved_projectId');
+            }
+
+            if (!pid) {
+                throw new Error("No se pudo obtener el ID del proyecto para generar el reporte.");
+            }
+
+            await pdfService.generateProjectReport(pid);
+        } catch (error: any) {
+            alert("Error al generar el PDF: " + error.message);
         } finally {
             setIsGenerating(false);
         }

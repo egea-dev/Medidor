@@ -33,12 +33,7 @@ export default function ProjectDetail() {
         if (!project) return;
         setIsGenerating(true);
         try {
-            await pdfService.generateProjectReport(
-                project,
-                project.measurements || [],
-                `Proyecto_${project.location}_${Date.now()}.pdf`,
-                project.id
-            );
+            await pdfService.generateProjectReport(project.id);
 
         } catch (err) {
             console.error(err);

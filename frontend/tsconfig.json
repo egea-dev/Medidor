@@ -20,13 +20,12 @@
                 "./src/*"
             ],
             "@shared/*": [
-                "../shared/*"
+                "./src/shared/*"
             ]
         },
         "baseUrl": "."
     },
     "include": [
-        "src",
-        "../shared"
+        "src"
     ]
 }

@@ -217,6 +217,7 @@ export const useWizard = () => {
         saveToBackend,
         isSaving,
         lastSaved,
-        canSave: formData.location.trim() !== '' && formData.firstName.trim() !== ''
+        canSave: formData.location.trim() !== '' && formData.firstName.trim() !== '',
+        savedProjectId
     };
 };
