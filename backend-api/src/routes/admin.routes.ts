@@ -1,11 +1,11 @@
-import { Router } from 'express';
+import { Router, Response } from 'express';
 import { query } from '../config/database';
 import { authenticateToken, AuthRequest, isAdmin } from '../middleware/auth';
 
 const router = Router();
 
 // Obtener estadísticas globales (Solo Admin)
-router.get('/stats', authenticateToken, isAdmin, async (req: AuthRequest, res) => {
+router.get('/stats', authenticateToken, isAdmin, async (req: AuthRequest, res: Response) => {
     try {
         const [users]: any = await query('SELECT COUNT(*) as count FROM users');
         const [projects]: any = await query('SELECT COUNT(*) as count FROM projects');
@@ -22,7 +22,7 @@ router.get('/stats', authenticateToken, isAdmin, async (req: AuthRequest, res) =
 });
 
 // Listar todos los usuarios
-router.get('/users', authenticateToken, isAdmin, async (req: AuthRequest, res) => {
+router.get('/users', authenticateToken, isAdmin, async (req: AuthRequest, res: Response) => {
     try {
         const users = await query('SELECT id, email, role, created_at, is_active FROM users ORDER BY created_at DESC');
         res.json(users);
@@ -32,7 +32,7 @@ router.get('/users', authenticateToken, isAdmin, async (req: AuthRequest, res) =
 });
 
 // Cambiar rol de usuario
-router.put('/users/:id/role', authenticateToken, isAdmin, async (req: AuthRequest, res) => {
+router.put('/users/:id/role', authenticateToken, isAdmin, async (req: any, res: Response) => {
     try {
         const { id } = req.params;
         const { role } = req.body;
@@ -44,7 +44,7 @@ router.put('/users/:id/role', authenticateToken, isAdmin, async (req: AuthReques
 });
 
 // Activar/Desactivar usuario
-router.put('/users/:id/active', authenticateToken, isAdmin, async (req: AuthRequest, res) => {
+router.put('/users/:id/active', authenticateToken, isAdmin, async (req: any, res: Response) => {
     try {
         const { id } = req.params;
         const { is_active } = req.body;
@@ -56,7 +56,7 @@ router.put('/users/:id/active', authenticateToken, isAdmin, async (req: AuthRequ
 });
 
 // Listar todos los proyectos (vista admin)
-router.get('/projects', authenticateToken, isAdmin, async (req: AuthRequest, res) => {
+router.get('/projects', authenticateToken, isAdmin, async (req: AuthRequest, res: Response) => {
     try {
         const projects = await query(`
             SELECT p.*, u.email as user_email 
