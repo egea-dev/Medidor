@@ -34,7 +34,7 @@ export const MobileNav: React.FC = () => {
                 <Plus size={22} strokeWidth={2.5} />
             </NavLink>
 
-            {user && (
+            {user?.role === 'admin' && (
                 <NavLink
                     to="/admin"
                     className={({ isActive }) => `flex flex-col items-center py-1 px-3 transition-all ${isActive ? 'text-brand-600' : 'text-gray-400'}`}

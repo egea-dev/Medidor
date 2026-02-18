@@ -7,13 +7,15 @@ interface WizardSidebarProps {
     currentLocation: { floor: string; roomNumber: string; room: string };
     selectedType: ProductType | null;
     handleClearAll: () => void;
+    onGoToWelcome: () => void;
 }
 
 export const WizardSidebar: React.FC<WizardSidebarProps> = ({
     step,
     currentLocation,
     selectedType,
-    handleClearAll
+    handleClearAll,
+    onGoToWelcome
 }) => {
     return (
         <div className="hidden md:flex w-full md:w-[35%] bg-white relative border-l border-gray-100 flex-col order-2 md:order-2 justify-between animate-fadeIn">
@@ -65,12 +67,20 @@ export const WizardSidebar: React.FC<WizardSidebarProps> = ({
                             <h3 className="font-bold text-gray-800 mb-4">Tarea Completada</h3>
                             <p className="text-sm text-gray-500">Revisa los datos y guarda el PDF.</p>
 
-                            <button
-                                onClick={handleClearAll}
-                                className="mt-6 text-xs text-red-400 hover:text-red-600 underline"
-                            >
-                                Borrar todo y reiniciar
-                            </button>
+                            <div className="flex flex-col gap-2 mt-6">
+                                <button
+                                    onClick={onGoToWelcome}
+                                    className="text-xs text-brand-600 font-bold hover:underline"
+                                >
+                                    Volver a Mis Proyectos
+                                </button>
+                                <button
+                                    onClick={handleClearAll}
+                                    className="text-xs text-red-400 hover:text-red-600 underline"
+                                >
+                                    Borrar todo y reiniciar
+                                </button>
+                            </div>
                         </div>
                     )}
                 </div>

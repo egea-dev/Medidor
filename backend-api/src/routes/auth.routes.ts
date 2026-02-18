@@ -76,7 +76,13 @@ router.post('/login', async (req, res) => {
 // GET ME
 router.get('/me', authenticateToken, async (req: AuthRequest, res) => {
     try {
-        const users: any = await query('SELECT id, email, role FROM users WHERE id = ?', [req.userId]);
+        const users: any = await query(
+            `SELECT u.id, u.email, u.role, up.full_name, up.avatar_url 
+             FROM users u 
+             LEFT JOIN user_profiles up ON u.id = up.id 
+             WHERE u.id = ?`,
+            [req.userId]
+        );
         const user = users[0];
 
         if (!user) return res.status(404).json({ message: 'Usuario no encontrado' });

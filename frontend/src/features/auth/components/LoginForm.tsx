@@ -97,11 +97,8 @@ export const LoginForm: React.FC = () => {
           </button>
         </form>
 
-        {/* Credenciales demo */}
-        <div className="mt-5 p-3 bg-blue-50 rounded-xl border border-blue-100">
-          <p className="text-[10px] font-bold text-blue-500 uppercase mb-1">Credenciales de prueba</p>
-          <p className="text-xs text-blue-700 font-mono">demo@egea.es / 123456</p>
-        </div>
+
+
       </div>
     </div>
   );

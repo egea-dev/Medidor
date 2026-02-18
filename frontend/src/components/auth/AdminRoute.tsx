@@ -8,14 +8,13 @@ const Loading = () => (
     </div>
 );
 
-// AdminRoute: permite el acceso a cualquier usuario autenticado.
-// La seguridad real se gestiona en el backend con RLS de Supabase.
-// Si quieres restringir solo a admins, cambia la condición a: user.role !== 'admin'
+// AdminRoute: solo permite el acceso a usuarios con rol 'admin'.
 export const AdminRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     const { user, loading } = useAuth();
 
     if (loading) return <Loading />;
     if (!user) return <Navigate to="/login" replace />;
+    if (user.role !== 'admin') return <Navigate to="/" replace />;
 
     return <>{children}</>;
 };

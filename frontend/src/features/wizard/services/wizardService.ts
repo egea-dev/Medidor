@@ -38,5 +38,20 @@ export const wizardService = {
         }
 
         return projectId;
+    },
+
+    /**
+     * Obtiene los proyectos recientes del usuario.
+     */
+    async getRecentProjects(limit = 5) {
+        const projects: any = await api.get('/projects');
+        return projects.slice(0, limit);
+    },
+
+    /**
+     * Obtiene los detalles de un proyecto específico.
+     */
+    async getProject(projectId: string) {
+        return api.get(`/projects/${projectId}`);
     }
 };

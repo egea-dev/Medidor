@@ -197,88 +197,147 @@ export default function AdminUsers() {
                         <p className="text-slate-400 text-sm mt-1">Prueba con otros filtros</p>
                     </div>
                 ) : (
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="bg-slate-50 border-b border-slate-100">
-                                    <th className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Usuario</th>
-                                    <th className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Rol</th>
-                                    <th className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Estado</th>
-                                    <th className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider hidden md:table-cell">Registro</th>
-                                    <th className="text-right px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-50">
-                                {filtered.map(u => (
-                                    <tr key={u.id} className="hover:bg-slate-50/60 transition-colors">
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold text-sm flex-shrink-0">
-                                                    {(u.full_name || u.email || 'U').charAt(0).toUpperCase()}
-                                                </div>
-                                                <div>
-                                                    <p className="font-semibold text-slate-900">{u.full_name || <span className="text-slate-400 italic">Sin nombre</span>}</p>
-                                                    <p className="text-xs text-slate-400">{u.email}</p>
-                                                </div>
-                                            </div>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${u.role === 'admin'
-                                                ? 'bg-violet-50 text-violet-700 border-violet-100'
-                                                : 'bg-slate-50 text-slate-600 border-slate-200'
-                                                }`}>
-                                                {u.role === 'admin' ? <ShieldAlert size={11} /> : <User size={11} />}
-                                                {u.role === 'admin' ? 'Administrador' : 'Usuario'}
-                                            </span>
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            {u.is_active ? (
-                                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full">
-                                                    <CheckCircle size={11} /> Activo
-                                                </span>
-                                            ) : (
-                                                <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 bg-red-50 border border-red-100 px-3 py-1 rounded-full">
-                                                    <XCircle size={11} /> Inactivo
-                                                </span>
-                                            )}
-                                        </td>
-                                        <td className="px-6 py-4 text-slate-400 text-xs hidden md:table-cell">
-                                            {new Date(u.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                        </td>
-                                        <td className="px-6 py-4">
-                                            <div className="flex items-center justify-end gap-2">
-                                                <button
-                                                    onClick={() => handleRoleChange(u.id, u.role)}
-                                                    disabled={actionLoading === u.id + '_role'}
-                                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all hover:shadow-sm disabled:opacity-50
-                                                        text-violet-600 border-violet-200 bg-violet-50 hover:bg-violet-100"
-                                                    title="Cambiar rol"
-                                                >
-                                                    {actionLoading === u.id + '_role' ? <Loader2 size={12} className="animate-spin" /> : <Shield size={12} />}
-                                                    {u.role === 'admin' ? 'Quitar Admin' : 'Hacer Admin'}
-                                                </button>
-                                                <button
-                                                    onClick={() => handleToggleActive(u.id, u.is_active)}
-                                                    disabled={actionLoading === u.id + '_status'}
-                                                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all hover:shadow-sm disabled:opacity-50 ${u.is_active
-                                                        ? 'text-red-600 border-red-200 bg-red-50 hover:bg-red-100'
-                                                        : 'text-emerald-600 border-emerald-200 bg-emerald-50 hover:bg-emerald-100'
-                                                        }`}
-                                                    title={u.is_active ? 'Desactivar' : 'Activar'}
-                                                >
-                                                    {actionLoading === u.id + '_status' ? <Loader2 size={12} className="animate-spin" /> : u.is_active ? <XCircle size={12} /> : <CheckCircle size={12} />}
-                                                    {u.is_active ? 'Desactivar' : 'Activar'}
-                                                </button>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                        <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 text-xs text-slate-400">
-                            Mostrando {filtered.length} de {users.length} usuarios
+                    <>
+                        {/* Mobile View: Cards */}
+                        <div className="grid grid-cols-1 gap-4 p-4 md:hidden">
+                            {filtered.map(u => (
+                                <div key={u.id} className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-4">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold text-lg flex-shrink-0">
+                                            {(u.full_name || u.email || 'U').charAt(0).toUpperCase()}
+                                        </div>
+                                        <div className="overflow-hidden">
+                                            <p className="font-bold text-slate-900 truncate">{u.full_name || 'Sin nombre'}</p>
+                                            <p className="text-xs text-slate-400 truncate">{u.email}</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex flex-wrap gap-2">
+                                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold border ${u.role === 'admin'
+                                            ? 'bg-violet-50 text-violet-700 border-violet-100'
+                                            : 'bg-white text-slate-600 border-slate-200'
+                                            }`}>
+                                            {u.role === 'admin' ? <ShieldAlert size={10} /> : <User size={10} />}
+                                            {u.role === 'admin' ? 'ADMIN' : 'USUARIO'}
+                                        </span>
+                                        <span className={`inline-flex items-center gap-1.5 text-[10px] font-bold px-3 py-1 rounded-full border ${u.is_active
+                                            ? 'bg-emerald-50 text-emerald-700 border-emerald-100'
+                                            : 'bg-red-50 text-red-600 border-red-100'
+                                            }`}>
+                                            {u.is_active ? <CheckCircle size={10} /> : <XCircle size={10} />}
+                                            {u.is_active ? 'ACTIVO' : 'INACTIVO'}
+                                        </span>
+                                    </div>
+
+                                    <div className="grid grid-cols-2 gap-2 pt-2 border-t border-slate-200">
+                                        <button
+                                            onClick={() => handleRoleChange(u.id, u.role)}
+                                            disabled={actionLoading === u.id + '_role'}
+                                            className="flex items-center justify-center gap-1.5 py-2 text-[11px] font-bold rounded-xl border transition-all text-violet-600 border-violet-200 bg-white hover:bg-violet-50"
+                                        >
+                                            {actionLoading === u.id + '_role' ? <Loader2 size={12} className="animate-spin" /> : <Shield size={12} />}
+                                            Rol
+                                        </button>
+                                        <button
+                                            onClick={() => handleToggleActive(u.id, u.is_active)}
+                                            disabled={actionLoading === u.id + '_status'}
+                                            className={`flex items-center justify-center gap-1.5 py-2 text-[11px] font-bold rounded-xl border transition-all bg-white ${u.is_active
+                                                ? 'text-red-600 border-red-200 hover:bg-red-50'
+                                                : 'text-emerald-600 border-emerald-200 hover:bg-emerald-50'
+                                                }`}
+                                        >
+                                            {actionLoading === u.id + '_status' ? <Loader2 size={12} className="animate-spin" /> : u.is_active ? <XCircle size={12} /> : <CheckCircle size={12} />}
+                                            {u.is_active ? 'Baja' : 'Alta'}
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
-                    </div>
+
+                        {/* Desktop View: Table */}
+                        <div className="hidden md:block overflow-x-auto">
+                            <table className="w-full text-sm">
+                                <thead>
+                                    <tr className="bg-slate-50 border-b border-slate-100">
+                                        <th className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Usuario</th>
+                                        <th className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Rol</th>
+                                        <th className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Estado</th>
+                                        <th className="text-left px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Registro</th>
+                                        <th className="text-right px-6 py-3.5 text-xs font-semibold text-slate-500 uppercase tracking-wider">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-50">
+                                    {filtered.map(u => (
+                                        <tr key={u.id} className="hover:bg-slate-50/60 transition-colors">
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold text-sm flex-shrink-0">
+                                                        {(u.full_name || u.email || 'U').charAt(0).toUpperCase()}
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-semibold text-slate-900">{u.full_name || <span className="text-slate-400 italic">Sin nombre</span>}</p>
+                                                        <p className="text-xs text-slate-400">{u.email}</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${u.role === 'admin'
+                                                    ? 'bg-violet-50 text-violet-700 border-violet-100'
+                                                    : 'bg-slate-50 text-slate-600 border-slate-200'
+                                                    }`}>
+                                                    {u.role === 'admin' ? <ShieldAlert size={11} /> : <User size={11} />}
+                                                    {u.role === 'admin' ? 'Administrador' : 'Usuario'}
+                                                </span>
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                {u.is_active ? (
+                                                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-emerald-700 bg-emerald-50 border border-emerald-100 px-3 py-1 rounded-full">
+                                                        <CheckCircle size={11} /> Activo
+                                                    </span>
+                                                ) : (
+                                                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-red-600 bg-red-50 border border-red-100 px-3 py-1 rounded-full">
+                                                        <XCircle size={11} /> Inactivo
+                                                    </span>
+                                                )}
+                                            </td>
+                                            <td className="px-6 py-4 text-slate-400 text-xs">
+                                                {new Date(u.created_at).toLocaleDateString('es-ES', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                            </td>
+                                            <td className="px-6 py-4">
+                                                <div className="flex items-center justify-end gap-2">
+                                                    <button
+                                                        onClick={() => handleRoleChange(u.id, u.role)}
+                                                        disabled={actionLoading === u.id + '_role'}
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all hover:shadow-sm disabled:opacity-50
+                                                            text-violet-600 border-violet-200 bg-violet-50 hover:bg-violet-100"
+                                                        title="Cambiar rol"
+                                                    >
+                                                        {actionLoading === u.id + '_role' ? <Loader2 size={12} className="animate-spin" /> : <Shield size={12} />}
+                                                        {u.role === 'admin' ? 'Quitar Admin' : 'Hacer Admin'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleToggleActive(u.id, u.is_active)}
+                                                        disabled={actionLoading === u.id + '_status'}
+                                                        className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all hover:shadow-sm disabled:opacity-50 ${u.is_active
+                                                            ? 'text-red-600 border-red-200 bg-red-50 hover:bg-red-100'
+                                                            : 'text-emerald-600 border-emerald-200 bg-emerald-50 hover:bg-emerald-100'
+                                                            }`}
+                                                        title={u.is_active ? 'Desactivar' : 'Activar'}
+                                                    >
+                                                        {actionLoading === u.id + '_status' ? <Loader2 size={12} className="animate-spin" /> : u.is_active ? <XCircle size={12} /> : <CheckCircle size={12} />}
+                                                        {u.is_active ? 'Desactivar' : 'Activar'}
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                            <div className="px-6 py-3 bg-slate-50 border-t border-slate-100 text-xs text-slate-400">
+                                Mostrando {filtered.length} de {users.length} usuarios
+                            </div>
+                        </div>
+                    </>
                 )}
             </div>
 

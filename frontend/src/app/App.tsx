@@ -9,7 +9,7 @@ const WizardPage = lazy(() => import('@/features/wizard/components/WizardPage'))
 const ProjectList = lazy(() => import('@/features/projects/components/ProjectList'));
 const ProjectDetail = lazy(() => import('@/features/projects/components/ProjectDetail'));
 const LoginForm = lazy(() => import('@/features/auth/components/LoginForm'));
-const UserProfile = lazy(() => import('@/features/auth/components/UserProfile'));
+const UserProfile = lazy(() => import('@/features/auth/pages/UserProfile'));
 const AdminDashboard = lazy(() => import('@/features/admin/pages/AdminDashboard'));
 const AdminUsers = lazy(() => import('@/features/admin/pages/AdminUsers'));
 const AdminProjects = lazy(() => import('@/features/admin/pages/AdminProjects'));

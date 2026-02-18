@@ -193,6 +193,50 @@ export const useWizard = () => {
         }
     };
 
+    const loadProject = async (projectId: string) => {
+        setIsSaving(true);
+        try {
+            const data = await wizardService.getProject(projectId);
+
+            // 1. Mapear datos de proyecto a formData
+            setFormData({
+                firstName: data.first_name || '',
+                lastName: data.last_name || '',
+                email: data.email || '',
+                phone: data.phone || '',
+                location: data.location || '',
+                jobType: data.job_type || '',
+                date: data.date ? new Date(data.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+                railType: data.rail_type || '',
+                observations: data.observations || ''
+            });
+
+            // 2. Mapear medidas
+            const mappedMeasurements = (data.measurements || []).map((m: any) => ({
+                id: m.id,
+                floor: m.floor,
+                roomNumber: m.room_number,
+                room: m.room,
+                type: { id: m.product_type, label: m.product_label },
+                width: Number(m.width),
+                height: Number(m.height),
+                depth: m.depth ? Number(m.depth) : undefined,
+                quantity: Number(m.quantity),
+                observations: m.observations,
+                images: [] // Las imágenes se manejarían por URL si es necesario
+            }));
+
+            setMeasurements(mappedMeasurements);
+            setSavedProjectId(projectId);
+            setStep(4); // Navegar directamente al resumen
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } catch (error: any) {
+            alert("Error al cargar el proyecto: " + error.message);
+        } finally {
+            setIsSaving(false);
+        }
+    };
+
     return {
         step,
         setStep,
@@ -215,6 +259,7 @@ export const useWizard = () => {
         handleAddMore,
         handleClearAll,
         saveToBackend,
+        loadProject,
         isSaving,
         lastSaved,
         canSave: formData.location.trim() !== '' && formData.firstName.trim() !== '',

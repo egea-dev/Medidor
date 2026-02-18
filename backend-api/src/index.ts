@@ -6,6 +6,7 @@ import projectRoutes from './routes/projects.routes';
 import imageRoutes from './routes/images.routes';
 import pdfRoutes from './routes/pdf.routes';
 import adminRoutes from './routes/admin.routes';
+import profileRoutes from './routes/profile.routes';
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/images', imageRoutes);
 app.use('/api/pdf', pdfRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/profile', profileRoutes);
 
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });

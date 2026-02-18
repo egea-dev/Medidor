@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Download, LayoutList, RotateCcw, MessageSquare, ArrowUpDown, Calendar, MapPin, Briefcase } from 'lucide-react';
+import { Download, LayoutList, RotateCcw, MessageSquare, ArrowUpDown, Calendar, MapPin, Briefcase, Save, Loader2, CheckCircle } from 'lucide-react';
 import { FormData, Measurement } from '@shared/types';
 import { pdfService } from '@/services/pdfService';
 
@@ -23,12 +23,13 @@ export const Step4Summary: React.FC<Step4Props> = ({
     onBackToStart
 }) => {
     const [isGenerating, setIsGenerating] = useState(false);
+    const [localIsSaving, setLocalIsSaving] = useState(false);
     const [sortBy, setSortBy] = useState<SortOption>('date');
+    const [showSuccess, setShowSuccess] = useState(false);
 
     const getSortedMeasurements = () => {
         const sorted = [...measurements];
         if (sortBy === 'location') {
-            // Sort by Floor then Room
             return sorted.sort((a, b) => {
                 const floorCompare = a.floor.localeCompare(b.floor, undefined, { numeric: true, sensitivity: 'base' });
                 if (floorCompare !== 0) return floorCompare;
@@ -38,7 +39,6 @@ export const Step4Summary: React.FC<Step4Props> = ({
         if (sortBy === 'type') {
             return sorted.sort((a, b) => (a.type?.label || '').localeCompare(b.type?.label || ''));
         }
-        // Default 'date' relies on creation order which matches array order for now
         return sorted;
     };
 
@@ -58,21 +58,35 @@ export const Step4Summary: React.FC<Step4Props> = ({
         return dimText;
     };
 
-    const handleSaveTask = async () => {
+    const handleSaveOnly = async () => {
+        if (!onSave) return;
+        setLocalIsSaving(true);
+        try {
+            await onSave();
+            setShowSuccess(true);
+            setTimeout(() => setShowSuccess(false), 3000);
+        } catch (error: any) {
+            alert("Error al guardar el proyecto: " + error.message);
+        } finally {
+            setLocalIsSaving(false);
+        }
+    };
+
+    const handleGeneratePDF = async () => {
+        let pid = projectId;
+
+        // Si no hay ID, intentamos recuperar del storage por si acaso
+        if (!pid) {
+            pid = localStorage.getItem('egea_saved_projectId');
+        }
+
+        if (!pid) {
+            alert("Primero debes guardar el proyecto para generar el PDF.");
+            return;
+        }
+
         setIsGenerating(true);
         try {
-            let pid = projectId;
-            if (!pid && onSave) {
-                console.log("Proyecto no guardado. Guardando antes de generar PDF...");
-                await onSave();
-                // El padre debería actualizar projectId, pero si no, intentamos obtenerlo del localStorage
-                pid = localStorage.getItem('egea_saved_projectId');
-            }
-
-            if (!pid) {
-                throw new Error("No se pudo obtener el ID del proyecto para generar el reporte.");
-            }
-
             await pdfService.generateProjectReport(pid);
         } catch (error: any) {
             alert("Error al generar el PDF: " + error.message);
@@ -187,20 +201,48 @@ export const Step4Summary: React.FC<Step4Props> = ({
                 )}
             </div>
 
-            <div className="w-full pb-8 md:pb-0 space-y-3">
-                <button
-                    onClick={handleSaveTask}
-                    disabled={isGenerating || sortedMeasurements.length === 0}
-                    className={`w-full px-6 py-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-3 active:scale-95 transform 
-            ${isGenerating || sortedMeasurements.length === 0
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed shadow-none'
-                            : 'bg-brand-900 text-white hover:shadow-xl hover:bg-black'}`}
-                >
-                    {isGenerating
-                        ? 'Generando PDF...'
-                        : <><Download size={20} /> Descargar Informe (PDF)</>
-                    }
-                </button>
+            <div className="w-full pb-8 md:pb-0 space-y-3 mt-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <button
+                        onClick={handleSaveOnly}
+                        disabled={localIsSaving || sortedMeasurements.length === 0}
+                        className={`px-6 py-4 rounded-xl font-bold transition-all flex items-center justify-center gap-3 active:scale-95 transform 
+                            ${localIsSaving || sortedMeasurements.length === 0
+                                ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                                : showSuccess
+                                    ? 'bg-emerald-500 text-white shadow-lg'
+                                    : 'bg-white text-slate-900 border-2 border-slate-900 hover:bg-slate-50'}`}
+                    >
+                        {localIsSaving ? (
+                            <Loader2 className="animate-spin" size={20} />
+                        ) : showSuccess ? (
+                            <><CheckCircle size={20} /> Guardado</>
+                        ) : (
+                            <><Save size={20} /> Guardar Proyecto</>
+                        )}
+                    </button>
+
+                    <button
+                        onClick={handleGeneratePDF}
+                        disabled={isGenerating || sortedMeasurements.length === 0 || !projectId}
+                        className={`px-6 py-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-3 active:scale-95 transform 
+                            ${isGenerating || sortedMeasurements.length === 0 || !projectId
+                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed shadow-none'
+                                : 'bg-brand-900 text-white hover:shadow-xl hover:bg-black'}`}
+                    >
+                        {isGenerating ? (
+                            <Loader2 className="animate-spin" size={20} />
+                        ) : (
+                            <><Download size={20} /> Generar PDF</>
+                        )}
+                    </button>
+                </div>
+
+                {!projectId && sortedMeasurements.length > 0 && (
+                    <p className="text-[11px] text-center text-brand-600 font-bold animate-pulse">
+                        * Debes guardar el proyecto antes de generar el PDF
+                    </p>
+                )}
 
                 {onBackToStart && (
                     <button

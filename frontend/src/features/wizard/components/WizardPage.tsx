@@ -36,6 +36,7 @@ export default function WizardPage() {
         handleAddMore,
         handleClearAll,
         saveToBackend,
+        loadProject,
         isSaving,
         lastSaved,
         canSave,
@@ -53,6 +54,7 @@ export default function WizardPage() {
                         onStart={() => setStep(1)}
                         hasMeasurements={measurements.length > 0}
                         onViewList={() => setStep(4)}
+                        onLoadProject={loadProject}
                     />
                 ) : (
                     <>
@@ -134,6 +136,7 @@ export default function WizardPage() {
                             currentLocation={currentLocation}
                             selectedType={selectedType}
                             handleClearAll={handleClearAll}
+                            onGoToWelcome={() => setStep(0)}
                         />
                     </>
                 )}
