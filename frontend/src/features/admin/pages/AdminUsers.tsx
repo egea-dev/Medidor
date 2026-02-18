@@ -85,21 +85,53 @@ export default function AdminUsers() {
     const admins = users.filter(u => u.role === 'admin').length;
     const actives = users.filter(u => u.is_active).length;
 
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [formData, setFormData] = useState({
+        email: '',
+        password: '',
+        full_name: '',
+        role: 'user' as UserRole
+    });
+
+    const handleCreateUser = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            await adminService.createUser(formData);
+            setShowCreateModal(false);
+            setFormData({ email: '', password: '', full_name: '', role: 'user' });
+            loadUsers();
+        } catch (e: any) {
+            alert(e.message || 'Error al crear usuario');
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <AdminLayout title="Gestión de Usuarios" subtitle={`${users.length} usuarios registrados`}>
-            {/* Summary chips */}
-            <div className="flex flex-wrap gap-3 mb-6">
-                {[
-                    { label: 'Total', value: users.length, cls: 'bg-slate-100 text-slate-700' },
-                    { label: 'Admins', value: admins, cls: 'bg-violet-100 text-violet-700' },
-                    { label: 'Activos', value: actives, cls: 'bg-emerald-100 text-emerald-700' },
-                    { label: 'Inactivos', value: users.length - actives, cls: 'bg-red-100 text-red-700' },
-                ].map(chip => (
-                    <div key={chip.label} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold ${chip.cls}`}>
-                        <span>{chip.value}</span>
-                        <span className="font-normal opacity-70">{chip.label}</span>
-                    </div>
-                ))}
+            {/* Header with Create Button */}
+            <div className="flex justify-between items-center mb-6">
+                <div className="flex flex-wrap gap-3">
+                    {[
+                        { label: 'Total', value: users.length, cls: 'bg-slate-100 text-slate-700' },
+                        { label: 'Admins', value: admins, cls: 'bg-violet-100 text-violet-700' },
+                        { label: 'Activos', value: actives, cls: 'bg-emerald-100 text-emerald-700' },
+                        { label: 'Inactivos', value: users.length - actives, cls: 'bg-red-100 text-red-700' },
+                    ].map(chip => (
+                        <div key={chip.label} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold ${chip.cls}`}>
+                            <span>{chip.value}</span>
+                            <span className="font-normal opacity-70">{chip.label}</span>
+                        </div>
+                    ))}
+                </div>
+                <button
+                    onClick={() => setShowCreateModal(true)}
+                    className="flex items-center gap-2 bg-brand-600 text-white px-4 py-2 rounded-xl text-sm font-bold hover:bg-brand-700 transition-all shadow-sm"
+                >
+                    <User size={18} />
+                    Nuevo Usuario
+                </button>
             </div>
 
             {/* Filters */}
@@ -192,8 +224,8 @@ export default function AdminUsers() {
                                         </td>
                                         <td className="px-6 py-4">
                                             <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${u.role === 'admin'
-                                                    ? 'bg-violet-50 text-violet-700 border-violet-100'
-                                                    : 'bg-slate-50 text-slate-600 border-slate-200'
+                                                ? 'bg-violet-50 text-violet-700 border-violet-100'
+                                                : 'bg-slate-50 text-slate-600 border-slate-200'
                                                 }`}>
                                                 {u.role === 'admin' ? <ShieldAlert size={11} /> : <User size={11} />}
                                                 {u.role === 'admin' ? 'Administrador' : 'Usuario'}
@@ -229,8 +261,8 @@ export default function AdminUsers() {
                                                     onClick={() => handleToggleActive(u.id, u.is_active)}
                                                     disabled={actionLoading === u.id + '_status'}
                                                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border transition-all hover:shadow-sm disabled:opacity-50 ${u.is_active
-                                                            ? 'text-red-600 border-red-200 bg-red-50 hover:bg-red-100'
-                                                            : 'text-emerald-600 border-emerald-200 bg-emerald-50 hover:bg-emerald-100'
+                                                        ? 'text-red-600 border-red-200 bg-red-50 hover:bg-red-100'
+                                                        : 'text-emerald-600 border-emerald-200 bg-emerald-50 hover:bg-emerald-100'
                                                         }`}
                                                     title={u.is_active ? 'Desactivar' : 'Activar'}
                                                 >
@@ -249,6 +281,85 @@ export default function AdminUsers() {
                     </div>
                 )}
             </div>
+
+            {/* Create User Modal */}
+            {showCreateModal && (
+                <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in duration-200">
+                        <div className="px-6 py-5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+                            <h3 className="font-bold text-slate-900 flex items-center gap-2">
+                                <User className="text-brand-500" size={20} />
+                                Nuevo Usuario
+                            </h3>
+                            <button onClick={() => setShowCreateModal(false)} className="text-slate-400 hover:text-slate-600 p-1">
+                                <XCircle size={24} />
+                            </button>
+                        </div>
+                        <form onSubmit={handleCreateUser} className="p-6 space-y-4">
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Nombre Completo</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={formData.full_name}
+                                    onChange={e => setFormData({ ...formData, full_name: e.target.value })}
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all font-medium"
+                                    placeholder="Ej: Juan Pérez"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Email</label>
+                                <input
+                                    type="email"
+                                    required
+                                    value={formData.email}
+                                    onChange={e => setFormData({ ...formData, email: e.target.value })}
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all font-medium"
+                                    placeholder="email@ejemplo.com"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Contraseña</label>
+                                <input
+                                    type="password"
+                                    required
+                                    value={formData.password}
+                                    onChange={e => setFormData({ ...formData, password: e.target.value })}
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 transition-all font-medium"
+                                    placeholder="••••••••"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1.5 ml-1">Rol</label>
+                                <select
+                                    value={formData.role}
+                                    onChange={e => setFormData({ ...formData, role: e.target.value as UserRole })}
+                                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm outline-none focus:border-brand-500 transition-all font-medium"
+                                >
+                                    <option value="user">Usuario (Medidor)</option>
+                                    <option value="admin">Administrador</option>
+                                </select>
+                            </div>
+                            <div className="pt-2 flex gap-3">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowCreateModal(false)}
+                                    className="flex-1 py-3 text-sm font-bold text-slate-500 hover:bg-slate-50 rounded-xl transition-colors"
+                                >
+                                    Cancelar
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={loading}
+                                    className="flex-1 bg-brand-600 text-white py-3 rounded-xl text-sm font-bold hover:bg-brand-700 transition-all shadow-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                                >
+                                    {loading ? <Loader2 size={18} className="animate-spin" /> : 'Crear Usuario'}
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </AdminLayout>
     );
 }

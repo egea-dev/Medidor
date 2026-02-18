@@ -5,8 +5,7 @@ export const adminService = {
      * Obtiene lista de todos los usuarios (Solo Admin)
      */
     async getUsers() {
-        const response = await api.get('/admin/users');
-        return response.json();
+        return api.get('/admin/users');
     },
 
     /**
@@ -20,31 +19,34 @@ export const adminService = {
      * Obtiene estadísticas globales (Solo Admin)
      */
     async getStats() {
-        const response = await api.get('/admin/stats');
-        return response.json();
+        return api.get('/admin/stats');
     },
 
     /**
      * Obtiene lista de todos los proyectos (Solo Admin)
      */
     async getAllProjects() {
-        const response = await api.get('/admin/projects');
-        return response.json();
+        return api.get('/admin/projects');
     },
 
     /**
      * Cambia el rol de un usuario
      */
     async updateUserRole(id: string, role: string) {
-        const response = await api.put(`/admin/users/${id}/role`, { role });
-        return response.json();
+        return api.put(`/admin/users/${id}/role`, { role });
     },
 
     /**
      * Activa/Desactiva un usuario
      */
     async toggleUserActive(id: string, is_active: boolean) {
-        const response = await api.put(`/admin/users/${id}/active`, { is_active });
-        return response.json();
+        return api.put(`/admin/users/${id}/active`, { is_active });
+    },
+
+    /**
+     * Crea un nuevo usuario (Solo Admin)
+     */
+    async createUser(userData: any) {
+        return api.post('/admin/users', userData);
     }
 };
