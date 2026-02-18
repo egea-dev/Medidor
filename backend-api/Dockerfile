@@ -24,7 +24,7 @@ WORKDIR /app
 
 # Copiamos solo lo necesario para ejecutar
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm install --omit=dev
 
 # Copiamos el código compilado desde la etapa builder
 COPY --from=builder /app/dist ./dist
