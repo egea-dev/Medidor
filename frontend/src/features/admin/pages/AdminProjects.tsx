@@ -6,7 +6,7 @@ import {
     Trash2, ChevronDown, RefreshCw, Eye, Calendar, Ruler
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/lib/supabase';
+import { projectService } from '@/services/projectService';
 
 interface Project {
     id: string;
@@ -54,9 +54,7 @@ export default function AdminProjects() {
         if (!window.confirm(`¿Eliminar el proyecto "${location || 'Sin nombre'}"? Esta acción no se puede deshacer.`)) return;
         setDeletingId(projectId);
         try {
-            if (!supabase) throw new Error('Supabase no configurado');
-            const { error } = await supabase.from('projects').delete().eq('id', projectId);
-            if (error) throw error;
+            await projectService.delete(projectId);
             setProjects(prev => prev.filter(p => p.id !== projectId));
         } catch (e) {
             alert('Error al eliminar el proyecto');

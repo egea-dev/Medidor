@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
-import { uploadImage, deleteImage, getSignedUrl } from '@/lib/storage';
+import { api } from '@/lib/api';
 import { compressImage } from '../utils/compressImage';
 import type { ImageRecord } from '@shared/types';
 
@@ -9,57 +8,48 @@ export function useImages(projectId: string) {
   const [uploading, setUploading] = useState(false);
 
   const fetchImages = useCallback(async () => {
-    if (!supabase) return;
-    const { data } = await supabase
-      .from('images')
-      .select('*')
-      .eq('project_id', projectId)
-      .order('created_at', { ascending: false });
-
-    if (data) {
-      const withUrls = await Promise.all(
-        data.map(async (img: any) => ({
-          ...img,
-          url: await getSignedUrl(img.storage_path),
-        }))
-      );
-      setImages(withUrls);
+    try {
+      const projectData = await api.get(`/projects/${projectId}`);
+      setImages(projectData.images || []);
+    } catch (error) {
+      console.error('Error fetching images:', error);
     }
   }, [projectId]);
 
-  const upload = async (files: File[], userId: string, measurementId?: string) => {
+  const upload = async (files: File[], measurementId?: string) => {
     setUploading(true);
     try {
       for (const file of files) {
         const compressed = await compressImage(file);
-        const { path, error: uploadError } = await uploadImage(
-          compressed, userId, projectId, measurementId
-        );
-        if (uploadError) throw uploadError;
 
-        if (supabase) {
-          await supabase.from('images').insert({
-            project_id: projectId,
-            measurement_id: measurementId || null,
-            storage_path: path,
-            original_name: file.name,
-            mime_type: 'image/jpeg',
-            size_bytes: compressed.size,
-          });
-        }
+        const formData = new FormData();
+        formData.append('image', compressed);
+        formData.append('projectId', projectId);
+        if (measurementId) formData.append('measurementId', measurementId);
+
+        const result = await api.upload('/images/upload', formData);
+
+        // El backend devuelve { id, url }
+        console.log('Imagen subida:', result);
       }
       await fetchImages();
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      alert('Error al subir imágenes');
     } finally {
       setUploading(false);
     }
   };
 
-  const remove = async (imageId: string, storagePath: string) => {
-    await deleteImage(storagePath);
-    if (supabase) {
-      await supabase.from('images').delete().eq('id', imageId);
+  const remove = async (imageId: string) => {
+    try {
+      // En el backend actual no hemos creado DELETE para imágenes aún, 
+      // pero lo añadimos para consistencia. Por ahora limpiamos el estado.
+      // await api.delete(`/images/${imageId}`);
+      setImages(prev => prev.filter(img => img.id !== imageId));
+    } catch (error) {
+      console.error('Error removing image:', error);
     }
-    setImages(prev => prev.filter(img => img.id !== imageId));
   };
 
   return { images, uploading, fetchImages, upload, remove };

@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
+import { api } from '@/lib/api';
 
-// Tipo de usuario extendido con rol
+// Tipo de usuario coincidente con el nuevo backend
 export interface AppUser {
   id: string;
   email: string;
@@ -26,142 +26,76 @@ export const useAuth = () => {
   return ctx;
 };
 
-// Usuario demo para desarrollo sin conexión a Supabase
-const DEMO_USER: AppUser = {
-  id: 'demo-user-001',
-  email: 'demo@egea.es',
-  name: 'Demo Egea',
-  role: 'admin', // En demo somos admin por defecto
-};
-const DEMO_PASSWORD = '123456';
-
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<AppUser | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Si no hay cliente de Supabase, usar modo demo desde localStorage
-    if (!supabase) {
-      const saved = localStorage.getItem('egea_auth_user');
-      if (saved) {
-        try { setUser(JSON.parse(saved)); } catch { /* ignore */ }
+    const initAuth = async () => {
+      const token = localStorage.getItem('token');
+      const savedUser = localStorage.getItem('user');
+
+      if (token && savedUser) {
+        try {
+          // Intentar validar/refrescar contra el backend
+          const userData = await api.get('/auth/me');
+          const fullUser = {
+            ...userData,
+            name: userData.full_name || userData.email.split('@')[0],
+          };
+          setUser(fullUser);
+          localStorage.setItem('user', JSON.stringify(fullUser));
+        } catch (error) {
+          console.error('Error validando sesión:', error);
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setUser(null);
+        }
       }
       setLoading(false);
-      return;
-    }
-
-    // Configuración real con Supabase
-    const initAuth = async () => {
-      if (!supabase) return;
-      try {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (session?.user) {
-          await fetchUserProfile(session.user.id, session.user.email!);
-        }
-      } catch (error) {
-        console.error('Error al iniciar sesión:', error);
-      } finally {
-        setLoading(false);
-      }
     };
 
     initAuth();
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        await fetchUserProfile(session.user.id, session.user.email!);
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-      }
-    });
-
-    return () => subscription.unsubscribe();
   }, []);
 
-  const fetchUserProfile = async (userId: string, email: string) => {
-    if (!supabase) return;
-
-    try {
-      // Intentar obtener el perfil
-      const { data: profile, error } = await supabase
-        .from('user_profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        throw error;
-      }
-
-      if (profile) {
-        setUser({
-          id: userId,
-          email,
-          name: profile.full_name || email.split('@')[0],
-          role: profile.role || 'user',
-          avatar_url: profile.avatar_url,
-        });
-      } else {
-        // Si no existe perfil (ej: trigger falló o usuario antiguo), usar datos básicos
-        setUser({
-          id: userId,
-          email,
-          name: email.split('@')[0],
-          role: 'user', // Rol por defecto
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching user profile:', error);
-      // Fallback a usuario básico en caso de error
-      setUser({
-        id: userId,
-        email,
-        name: email.split('@')[0],
-        role: 'user',
-      });
-    }
-  };
-
   const signIn = async (email: string, password: string) => {
-    if (!supabase) {
-      // Fallback modo demo
-      if (email === DEMO_USER.email && password === DEMO_PASSWORD) {
-        setUser(DEMO_USER);
-        localStorage.setItem('egea_auth_user', JSON.stringify(DEMO_USER));
-        return { error: null };
-      }
-      return { error: new Error('Modo Demo: Usa demo@egea.es / 123456') };
-    }
+    try {
+      const data = await api.post('/auth/login', { email, password });
+      const { token, user: userData } = data;
 
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    return { error };
+      const appUser: AppUser = {
+        id: userData.id,
+        email: userData.email,
+        name: userData.full_name || userData.email.split('@')[0],
+        role: userData.role || 'user',
+      };
+
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(appUser));
+      setUser(appUser);
+
+      return { error: null };
+    } catch (error: any) {
+      return { error: new Error(error.message || 'Error al iniciar sesión') };
+    }
   };
 
   const signUp = async (email: string, password: string, fullName?: string) => {
-    if (!supabase) {
-      return { error: new Error('Registro deshabilitado en modo demo.') };
+    try {
+      await api.post('/auth/register', { email, password, fullName });
+      // Tras registrarse, no hacemos login automático aquí (o sí, según el backend)
+      // Por ahora, el backend devuelve 201 Created.
+      return { error: null };
+    } catch (error: any) {
+      return { error: new Error(error.message || 'Error al registrarse') };
     }
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName,
-        },
-      },
-    });
-
-    return { error };
   };
 
   const signOut = async () => {
-    if (!supabase) {
-      setUser(null);
-      localStorage.removeItem('egea_auth_user');
-      return;
-    }
-    await supabase.auth.signOut();
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    window.location.href = '/';
   };
 
   return (

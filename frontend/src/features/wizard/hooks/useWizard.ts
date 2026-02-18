@@ -1,8 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/features/auth/AuthProvider';
 import { wizardService } from '../services/wizardService';
-import { FormData, ProductType, Measurement } from '@shared/types';
+import type { FormData as ProjectFormData, ProductType, Measurement } from '@shared/types';
 
 export const useWizard = () => {
     const { user } = useAuth();
@@ -15,7 +14,7 @@ export const useWizard = () => {
     });
 
     // Inicializar formData desde LocalStorage o valores por defecto
-    const [formData, setFormData] = useState<FormData>(() => {
+    const [formData, setFormData] = useState<ProjectFormData>(() => {
         const saved = localStorage.getItem('egea_formData');
         return saved ? JSON.parse(saved) : {
             firstName: '',
@@ -106,7 +105,7 @@ export const useWizard = () => {
 
     const handleNext = () => {
         if (formData.location.trim() !== '' && formData.firstName.trim() !== '') {
-            saveToSupabase();
+            saveToBackend();
         }
 
         if (step === 0) {
@@ -163,7 +162,7 @@ export const useWizard = () => {
         }
     };
 
-    const saveToSupabase = async () => {
+    const saveToBackend = async () => {
         if (!user) {
             console.warn("Usuario no autenticado");
             return;
@@ -177,10 +176,8 @@ export const useWizard = () => {
         setIsSaving(true);
         try {
             const projectId = await wizardService.saveProject(
-                user.id,
                 formData,
-                measurements,
-                savedProjectId
+                measurements
             );
 
             if (projectId && projectId !== savedProjectId) {
@@ -190,7 +187,7 @@ export const useWizard = () => {
             setLastSaved(new Date());
         } catch (err: any) {
             console.error("Error al guardar:", err);
-            alert("Error al guardar en la base de datos: " + err.message);
+            alert("Error al guardar: " + err.message);
         } finally {
             setIsSaving(false);
         }
@@ -217,7 +214,7 @@ export const useWizard = () => {
         handleBack,
         handleAddMore,
         handleClearAll,
-        saveToSupabase,
+        saveToBackend,
         isSaving,
         lastSaved,
         canSave: formData.location.trim() !== '' && formData.firstName.trim() !== ''
