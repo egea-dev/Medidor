@@ -13,5 +13,12 @@ export default defineConfig({
     server: {
         port: 5173,
         host: true, // Accesible desde móvil en red local
+        proxy: {
+            '/api': {
+                target: 'http://localhost:4000',
+                changeOrigin: true,
+                secure: false,
+            },
+        },
     },
 });
