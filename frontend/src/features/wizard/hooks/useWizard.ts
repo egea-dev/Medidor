@@ -177,7 +177,8 @@ export const useWizard = () => {
         try {
             const projectId = await wizardService.saveProject(
                 formData,
-                measurements
+                measurements,
+                savedProjectId
             );
 
             if (projectId && projectId !== savedProjectId) {

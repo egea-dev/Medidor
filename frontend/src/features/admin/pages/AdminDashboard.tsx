@@ -131,7 +131,7 @@ export default function AdminDashboard() {
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <p className="font-semibold text-slate-900 text-sm truncate">{p.location || 'Sin ubicación'}</p>
-                                            <p className="text-xs text-slate-400 truncate">{p.user_profiles?.full_name || p.user_profiles?.email || 'Cliente desconocido'}</p>
+                                            <p className="text-xs text-slate-400 truncate">{p.user_full_name || p.user_email || 'Cliente desconocido'}</p>
                                         </div>
                                         <div className="flex items-center gap-3 flex-shrink-0">
                                             <span className="text-xs text-slate-400 hidden sm:block">
@@ -139,7 +139,7 @@ export default function AdminDashboard() {
                                             </span>
                                             <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${s.cls}`}>{s.label}</span>
                                             <button
-                                                onClick={() => navigate(`/projects/${p.id}`)}
+                                                onClick={() => navigate(`/admin/projects/${p.id}`)}
                                                 className="text-slate-300 hover:text-brand-500 transition-colors"
                                             >
                                                 <ArrowRight size={16} />

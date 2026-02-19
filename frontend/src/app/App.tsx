@@ -13,6 +13,7 @@ const UserProfile = lazy(() => import('@/features/auth/pages/UserProfile'));
 const AdminDashboard = lazy(() => import('@/features/admin/pages/AdminDashboard'));
 const AdminUsers = lazy(() => import('@/features/admin/pages/AdminUsers'));
 const AdminProjects = lazy(() => import('@/features/admin/pages/AdminProjects'));
+const AdminProjectDetail = lazy(() => import('@/features/admin/pages/AdminProjectDetail'));
 
 
 const Loading = () => (
@@ -69,6 +70,9 @@ function AppRoutes() {
                 } />
                 <Route path="/admin/projects" element={
                     <AdminRoute><AdminProjects /></AdminRoute>
+                } />
+                <Route path="/admin/projects/:id" element={
+                    <AdminRoute><AdminProjectDetail /></AdminRoute>
                 } />
 
                 <Route path="*" element={<Navigate to="/login" replace />} />

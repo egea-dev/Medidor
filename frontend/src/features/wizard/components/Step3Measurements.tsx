@@ -2,16 +2,18 @@ import React from 'react';
 import { Ruler, Plus, Save, Box, MessageSquare } from 'lucide-react';
 import { ProductType, Measurement } from '@shared/types';
 import { ImageUploader } from '@/components/ui/ImageUploader';
+import { wizardService } from '../services/wizardService';
 
 interface Step3Props {
     measurements: Measurement[];
     setMeasurements: React.Dispatch<React.SetStateAction<Measurement[]>>;
-    currentMeasure: { width: string; height: string; depth: string; observations: string; images?: File[] };
-    setCurrentMeasure: React.Dispatch<React.SetStateAction<{ width: string; height: string; depth: string; observations: string; images?: File[] }>>;
+    currentMeasure: { width: string; height: string; depth: string; observations: string; images?: any[] };
+    setCurrentMeasure: React.Dispatch<React.SetStateAction<{ width: string; height: string; depth: string; observations: string; images?: any[] }>>;
     selectedType: ProductType | null;
     currentLocation: { floor: string; roomNumber: string; room: string };
     onAddMore: () => void;
     onFinish: () => void;
+    projectId?: string | null;
 }
 
 export const Step3Measurements: React.FC<Step3Props> = ({
@@ -22,8 +24,35 @@ export const Step3Measurements: React.FC<Step3Props> = ({
     selectedType,
     currentLocation,
     onAddMore,
-    onFinish
+    onFinish,
+    projectId
 }) => {
+    const [uploading, setUploading] = React.useState(false);
+
+    const handleImageUpload = async (files: File[]) => {
+        if (!projectId) {
+            alert("No se ha guardado el proyecto todavía. Intenta volver atrás y continuar.");
+            return;
+        }
+
+        setUploading(true);
+        const uploadedImages: any[] = [];
+
+        for (const file of files) {
+            try {
+                const result = await wizardService.uploadImage(file, projectId);
+                uploadedImages.push(result); // result tiene {id, url}
+            } catch (err) {
+                console.error("Error al subir imagen:", err);
+            }
+        }
+
+        setCurrentMeasure(prev => ({
+            ...prev,
+            images: [...(prev.images || []), ...uploadedImages]
+        }));
+        setUploading(false);
+    };
 
     // Lógica para mostrar profundidad: TODO MENOS CORTINAS
     const showDepth = selectedType?.id !== 'cortinas';
@@ -44,11 +73,12 @@ export const Step3Measurements: React.FC<Step3Props> = ({
             roomNumber: currentLocation.roomNumber || '-',
             room: currentLocation.room || 'N/A',
             type: selectedType,
-            quantity: 1
+            quantity: 1,
+            images: currentMeasure.images // Pasamos los metadatos de las imágenes subidas
         }]);
 
         // Reset inputs
-        setCurrentMeasure({ width: '', height: '', depth: '', observations: '' });
+        setCurrentMeasure({ width: '', height: '', depth: '', observations: '', images: [] });
 
         // Ejecutar acción de navegación
         if (action === 'addMore') {
@@ -157,7 +187,8 @@ export const Step3Measurements: React.FC<Step3Props> = ({
                     <Box size={14} /> Fotos del elemento
                 </h3>
                 <ImageUploader
-                    onUpload={(files) => setCurrentMeasure(prev => ({ ...prev, images: [...(prev.images || []), ...files] }))}
+                    onUpload={handleImageUpload}
+                    loading={uploading}
                     maxFiles={5}
                 />
             </div>

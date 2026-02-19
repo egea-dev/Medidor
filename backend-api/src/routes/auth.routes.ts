@@ -48,11 +48,17 @@ router.post('/login', async (req, res) => {
     try {
         const { email, password } = req.body;
 
-        const users: any = await query('SELECT * FROM users WHERE email = ?', [email]);
+        const users: any = await query(`
+            SELECT u.id, u.email, u.password, up.role, up.is_active 
+            FROM users u 
+            LEFT JOIN user_profiles up ON u.id = up.id 
+            WHERE u.email = ?
+        `, [email]);
+
         const user = users[0];
 
         if (!user || user.is_active === 0) {
-            return res.status(401).json({ message: 'Credenciales inválidas' });
+            return res.status(401).json({ message: 'Credenciales inválidas o cuenta desactivada' });
         }
 
         const validPassword = await bcrypt.compare(password, user.password);
@@ -60,13 +66,15 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Credenciales inválidas' });
         }
 
+        const role = user.role || 'user';
+
         const token = jwt.sign(
-            { id: user.id, role: user.role },
+            { id: user.id, role: role },
             JWT_SECRET,
             { expiresIn: (process.env.JWT_EXPIRES_IN as any) || '7d' }
         );
 
-        res.json({ token, user: { id: user.id, email: user.email, role: user.role } });
+        res.json({ token, user: { id: user.id, email: user.email, role: role } });
     } catch (error: any) {
         console.error('Login Error:', error);
         res.status(500).json({ message: 'Error en el login', error: error.message });
@@ -77,7 +85,7 @@ router.post('/login', async (req, res) => {
 router.get('/me', authenticateToken, async (req: AuthRequest, res) => {
     try {
         const users: any = await query(
-            `SELECT u.id, u.email, u.role, up.full_name, up.avatar_url 
+            `SELECT u.id, u.email, up.role, up.full_name, up.avatar_url, up.is_active
              FROM users u 
              LEFT JOIN user_profiles up ON u.id = up.id 
              WHERE u.id = ?`,

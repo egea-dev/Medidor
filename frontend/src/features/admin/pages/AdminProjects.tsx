@@ -11,12 +11,15 @@ import { projectService } from '@/services/projectService';
 interface Project {
     id: string;
     location: string | null;
-    client_name: string | null;
-    client_phone: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    email: string | null;
+    phone: string | null;
     status: string | null;
     created_at: string;
     measurements: any[];
-    user_profiles: { full_name: string | null; email: string | null } | null;
+    user_full_name: string | null;
+    user_email: string | null;
 }
 
 const statusConfig: Record<string, { label: string; cls: string }> = {
@@ -54,7 +57,7 @@ export default function AdminProjects() {
         if (!window.confirm(`¿Eliminar el proyecto "${location || 'Sin nombre'}"? Esta acción no se puede deshacer.`)) return;
         setDeletingId(projectId);
         try {
-            await projectService.delete(projectId);
+            await adminService.deleteProject(projectId);
             setProjects(prev => prev.filter(p => p.id !== projectId));
         } catch (e) {
             alert('Error al eliminar el proyecto');
@@ -66,9 +69,10 @@ export default function AdminProjects() {
     const filtered = useMemo(() => projects.filter(p => {
         const matchSearch = !searchTerm ||
             p.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.user_profiles?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            p.user_profiles?.email?.toLowerCase().includes(searchTerm.toLowerCase());
+            p.user_full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.user_email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            p.email?.toLowerCase().includes(searchTerm.toLowerCase());
         const matchStatus = filterStatus === 'all' || p.status === filterStatus;
         return matchSearch && matchStatus;
     }), [projects, searchTerm, filterStatus]);
@@ -169,18 +173,18 @@ export default function AdminProjects() {
                                                     </div>
                                                     <div>
                                                         <p className="font-semibold text-slate-900 truncate max-w-[180px]">{p.location || <span className="text-slate-400 italic">Sin ubicación</span>}</p>
-                                                        {p.client_name && <p className="text-xs text-slate-400 truncate">{p.client_name}</p>}
+                                                        {(p.first_name || p.last_name) && <p className="text-xs text-slate-400 truncate">{p.first_name} {p.last_name}</p>}
                                                     </div>
                                                 </div>
                                             </td>
                                             <td className="px-6 py-4 hidden sm:table-cell">
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-7 h-7 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-xs flex-shrink-0">
-                                                        {(p.user_profiles?.full_name || p.user_profiles?.email || 'U').charAt(0).toUpperCase()}
+                                                        {(p.user_full_name || p.user_email || 'U').charAt(0).toUpperCase()}
                                                     </div>
                                                     <div>
-                                                        <p className="text-slate-700 font-medium text-xs">{p.user_profiles?.full_name || 'Sin nombre'}</p>
-                                                        <p className="text-slate-400 text-xs">{p.user_profiles?.email}</p>
+                                                        <p className="text-slate-700 font-medium text-xs">{p.user_full_name || 'Sin nombre'}</p>
+                                                        <p className="text-slate-400 text-xs">{p.user_email}</p>
                                                     </div>
                                                 </div>
                                             </td>
@@ -204,7 +208,7 @@ export default function AdminProjects() {
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center justify-end gap-2">
                                                     <button
-                                                        onClick={() => navigate(`/projects/${p.id}`)}
+                                                        onClick={() => navigate(`/admin/projects/${p.id}`)}
                                                         className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border text-blue-600 border-blue-200 bg-blue-50 hover:bg-blue-100 transition-all"
                                                         title="Ver proyecto"
                                                     >

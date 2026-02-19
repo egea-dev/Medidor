@@ -99,6 +99,7 @@ export default function WizardPage() {
                                         currentLocation={currentLocation}
                                         onAddMore={handleAddMore}
                                         onFinish={handleNext}
+                                        projectId={savedProjectId}
                                     />
                                 )}
                                 {step === 4 && (

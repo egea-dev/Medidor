@@ -37,44 +37,125 @@ router.get('/:id', authenticateToken, async (req: AuthRequest, res) => {
     }
 });
 
-// CREATE / Save Project (Wizard)
+// CREATE / SAVE / UPDATE Project (Wizard)
 router.post('/save-complete', authenticateToken, async (req: AuthRequest, res) => {
     try {
-        const { formData, measurements } = req.body;
-        const projectId = uuidv4();
+        const { formData, measurements, id: providedId } = req.body;
+        const isUpdate = !!providedId;
+        const projectId = providedId || uuidv4();
 
-        // 1. Insert Project
-        await query(
-            `INSERT INTO projects 
-            (id, user_id, first_name, last_name, email, phone, location, job_type, date, rail_type, observations, status) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-                projectId, req.userId, formData.firstName, formData.lastName,
-                formData.email, formData.phone, formData.location, formData.jobType,
-                formData.date, formData.railType, formData.observations, 'in_progress'
-            ]
-        );
+        if (isUpdate) {
+            // Update existing project
+            await query(
+                `UPDATE projects SET 
+                first_name = ?, last_name = ?, email = ?, phone = ?, 
+                location = ?, job_type = ?, date = ?, rail_type = ?, 
+                observations = ? 
+                WHERE id = ? AND user_id = ?`,
+                [
+                    formData.firstName || 'Sin nombre',
+                    formData.lastName || '',
+                    formData.email || null,
+                    formData.phone || null,
+                    formData.location || 'N/A',
+                    formData.jobType || null,
+                    formData.date || null,
+                    formData.railType || null,
+                    formData.observations || null,
+                    projectId,
+                    req.userId
+                ]
+            );
+        } else {
+            // Insert new project
+            await query(
+                `INSERT INTO projects 
+                (id, user_id, first_name, last_name, email, phone, location, job_type, date, rail_type, observations, status) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    projectId,
+                    req.userId || null,
+                    formData.firstName || 'Sin nombre',
+                    formData.lastName || '',
+                    formData.email || null,
+                    formData.phone || null,
+                    formData.location || 'N/A',
+                    formData.jobType || null,
+                    formData.date || null,
+                    formData.railType || null,
+                    formData.observations || null,
+                    'in_progress'
+                ]
+            );
+        }
 
-        // 2. Insert Measurements
+        // 2. Sync Measurements
+        // For simplicity in the wizard, we delete old measurements and insert new ones
+        // EXCEPT if we want to keep images associated with them.
+        // A better way is to keep IDs if provided.
+
+        // If it's an update, we should be careful not to break image FKs.
+        // Let's get existing measurement IDs to see what to keep.
+
         if (measurements && measurements.length > 0) {
+            // Option A: Delete and recreate (but this breaks image FKs if measurements have images)
+            // Option B: Smart sync. Let's try to keep IDs if they exist in the incoming array.
+
+            // Delete measurements NOT in the new list (if list has IDs)
+            const incomingIds = measurements.map((m: any) => m.id).filter(Boolean);
+            if (isUpdate) {
+                if (incomingIds.length > 0) {
+                    await query('DELETE FROM measurements WHERE project_id = ? AND id NOT IN (?)', [projectId, incomingIds]);
+                } else {
+                    await query('DELETE FROM measurements WHERE project_id = ?', [projectId]);
+                }
+            }
+
             for (const m of measurements) {
-                const mId = uuidv4();
+                const mId = m.id || uuidv4();
+
+                // Use REPLACE INTO or similar? Standard SQL: INSERT ... ON DUPLICATE KEY UPDATE
                 await query(
                     `INSERT INTO measurements 
                     (id, project_id, floor, room_number, room, product_type, product_label, width, height, depth, quantity, observations) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    ON DUPLICATE KEY UPDATE 
+                    floor = VALUES(floor), room_number = VALUES(room_number), room = VALUES(room), 
+                    product_type = VALUES(product_type), product_label = VALUES(product_label), 
+                    width = VALUES(width), height = VALUES(height), depth = VALUES(depth), 
+                    quantity = VALUES(quantity), observations = VALUES(observations)`,
                     [
-                        mId, projectId, m.floor, m.roomNumber, m.room,
-                        m.type?.id || 'otro', m.type?.label || 'Otro',
-                        m.width, m.height, m.depth || null, m.quantity, m.observations
+                        mId,
+                        projectId,
+                        m.floor || 'N/A',
+                        m.roomNumber || '-',
+                        m.room || 'N/A',
+                        m.type?.id || 'otro',
+                        m.type?.label || 'Otro',
+                        m.width || 0,
+                        m.height || 0,
+                        (m.depth !== undefined && m.depth !== null) ? m.depth : null,
+                        m.quantity || 1,
+                        m.observations || null
                     ]
                 );
             }
+        } else if (isUpdate) {
+            // If no measurements sent, but it's an update, maybe clear them?
+            // Depends on if we send the full list every time. The wizard DOES send the full list.
+            await query('DELETE FROM measurements WHERE project_id = ?', [projectId]);
         }
 
-        res.status(201).json({ message: 'Proyecto guardado correctamente', projectId });
+        res.status(isUpdate ? 200 : 201).json({
+            message: isUpdate ? 'Proyecto actualizado' : 'Proyecto guardado correctamente',
+            projectId
+        });
     } catch (error: any) {
-        res.status(500).json({ message: 'Error guardando proyecto completo', error: error.message });
+        console.error('CRITICAL ERROR in save-complete:', error);
+        res.status(500).json({
+            message: 'Error guardando proyecto completo',
+            error: error.message
+        });
     }
 });
 

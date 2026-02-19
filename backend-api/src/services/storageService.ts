@@ -9,14 +9,21 @@ export const storageService = {
             'Content-Type': contentType
         });
 
-        // Generamos una URL pre-firmada que dura 7 días (máximo en MinIO si el bucket es privado)
-        // O si el bucket es público, simplemente devolvemos la URL directa.
-        // Como el usuario tiene problemas con el modo público, usaremos presignedUrl por seguridad.
-        return await minioClient.presignedGetObject(bucket, path, 24 * 60 * 60 * 7);
+        return this.getPublicUrl(bucket, path);
+    },
+
+    getPublicUrl(bucket: string, path: string) {
+        const protocol = process.env.MINIO_USE_SSL === 'true' ? 'https' : 'http';
+        const endpoint = process.env.MINIO_ENDPOINT || 'localhost';
+        const port = process.env.MINIO_PORT || '9000';
+
+        // En MinIO estándar la URL es: protocol://endpoint:port/bucket/path
+        return `${protocol}://${endpoint}:${port}/${bucket}/${path}`;
     },
 
     async getFileUrl(bucket: string, path: string) {
-        return await minioClient.presignedGetObject(bucket, path, 24 * 60 * 60 * 7);
+        // Mantenemos este por compatibilidad, pero ahora devuelve la pública
+        return this.getPublicUrl(bucket, path);
     },
 
     async deleteFile(bucket: string, path: string) {

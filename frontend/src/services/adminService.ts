@@ -48,5 +48,36 @@ export const adminService = {
      */
     async createUser(userData: any) {
         return api.post('/admin/users', userData);
+    },
+
+    /**
+     * Sube un avatar para un usuario específico (Solo Admin)
+     */
+    async uploadUserAvatar(userId: string, file: File) {
+        const formData = new FormData();
+        formData.append('avatar', file);
+        return api.upload(`/admin/users/${userId}/avatar`, formData);
+    },
+
+    // PROYECTOS (Admin)
+    async deleteProject(id: string) {
+        return api.delete(`/admin/projects/${id}`);
+    },
+
+    async getProject(id: string) {
+        return api.get(`/admin/projects/${id}`);
+    },
+
+    async updateProject(id: string, data: any) {
+        return api.put(`/admin/projects/${id}`, data);
+    },
+
+    // IMÁGENES (Admin)
+    async getProjectImages(projectId: string) {
+        return api.get(`/admin/images?projectId=${projectId}`);
+    },
+
+    async deleteImage(id: string) {
+        return api.delete(`/admin/images/${id}`);
     }
 };

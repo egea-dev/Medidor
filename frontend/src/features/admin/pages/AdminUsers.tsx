@@ -3,7 +3,7 @@ import { AdminLayout } from '../components/AdminLayout';
 import { adminService } from '@/services/adminService';
 import {
     Search, Loader2, Shield, ShieldAlert, User,
-    CheckCircle, XCircle, ChevronDown, RefreshCw
+    CheckCircle, XCircle, ChevronDown, RefreshCw, Camera
 } from 'lucide-react';
 
 type UserRole = 'admin' | 'user';
@@ -17,6 +17,7 @@ interface UserProfile {
     created_at: string;
     company?: string;
     phone?: string;
+    avatar_url?: string;
 }
 
 export default function AdminUsers() {
@@ -27,6 +28,9 @@ export default function AdminUsers() {
     const [filterRole, setFilterRole] = useState<'all' | UserRole>('all');
     const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
     const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
+    const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
 
     const loadUsers = async (silent = false) => {
         if (!silent) setLoading(true);
@@ -68,6 +72,31 @@ export default function AdminUsers() {
             alert('Error al cambiar estado');
         } finally {
             setActionLoading(null);
+        }
+    };
+
+    const handleAvatarClick = (userId: string) => {
+        setSelectedUserId(userId);
+        if (fileInputRef.current) {
+            fileInputRef.current.click();
+        }
+    };
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file || !selectedUserId) return;
+
+        setActionLoading(selectedUserId + '_avatar');
+        try {
+            const response = await adminService.uploadUserAvatar(selectedUserId, file);
+            setUsers(prev => prev.map(u => u.id === selectedUserId ? { ...u, avatar_url: response.url } : u));
+        } catch (error) {
+            console.error('Error uploading avatar:', error);
+            alert('Error al subir el avatar');
+        } finally {
+            setActionLoading(null);
+            setSelectedUserId(null);
+            if (e.target) e.target.value = '';
         }
     };
 
@@ -203,8 +232,24 @@ export default function AdminUsers() {
                             {filtered.map(u => (
                                 <div key={u.id} className="bg-slate-50 rounded-2xl p-4 border border-slate-100 space-y-4">
                                     <div className="flex items-center gap-3">
-                                        <div className="w-12 h-12 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold text-lg flex-shrink-0">
-                                            {(u.full_name || u.email || 'U').charAt(0).toUpperCase()}
+                                        <div
+                                            className="relative group cursor-pointer"
+                                            onClick={() => handleAvatarClick(u.id)}
+                                        >
+                                            <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold text-lg flex-shrink-0">
+                                                {u.avatar_url ? (
+                                                    <img src={u.avatar_url} alt={u.full_name || ''} className="w-full h-full object-cover" />
+                                                ) : (
+                                                    (u.full_name || u.email || 'U').charAt(0).toUpperCase()
+                                                )}
+                                            </div>
+                                            <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                {actionLoading === u.id + '_avatar' ? (
+                                                    <Loader2 size={14} className="animate-spin text-white" />
+                                                ) : (
+                                                    <Camera size={14} className="text-white" />
+                                                )}
+                                            </div>
                                         </div>
                                         <div className="overflow-hidden">
                                             <p className="font-bold text-slate-900 truncate">{u.full_name || 'Sin nombre'}</p>
@@ -271,8 +316,24 @@ export default function AdminUsers() {
                                         <tr key={u.id} className="hover:bg-slate-50/60 transition-colors">
                                             <td className="px-6 py-4">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold text-sm flex-shrink-0">
-                                                        {(u.full_name || u.email || 'U').charAt(0).toUpperCase()}
+                                                    <div
+                                                        className="relative group cursor-pointer"
+                                                        onClick={() => handleAvatarClick(u.id)}
+                                                    >
+                                                        <div className="w-10 h-10 rounded-full overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center text-slate-600 font-bold text-sm flex-shrink-0">
+                                                            {u.avatar_url ? (
+                                                                <img src={u.avatar_url} alt={u.full_name || ''} className="w-full h-full object-cover" />
+                                                            ) : (
+                                                                (u.full_name || u.email || 'U').charAt(0).toUpperCase()
+                                                            )}
+                                                        </div>
+                                                        <div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                                                            {actionLoading === u.id + '_avatar' ? (
+                                                                <Loader2 size={12} className="animate-spin text-white" />
+                                                            ) : (
+                                                                <Camera size={12} className="text-white" />
+                                                            )}
+                                                        </div>
                                                     </div>
                                                     <div>
                                                         <p className="font-semibold text-slate-900">{u.full_name || <span className="text-slate-400 italic">Sin nombre</span>}</p>
@@ -419,6 +480,14 @@ export default function AdminUsers() {
                     </div>
                 </div>
             )}
+            {/* Hidden File Input */}
+            <input
+                type="file"
+                ref={fileInputRef}
+                className="hidden"
+                accept="image/*"
+                onChange={handleFileChange}
+            />
         </AdminLayout>
     );
 }
