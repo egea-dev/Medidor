@@ -14,6 +14,7 @@ const AdminDashboard = lazy(() => import('@/features/admin/pages/AdminDashboard'
 const AdminUsers = lazy(() => import('@/features/admin/pages/AdminUsers'));
 const AdminProjects = lazy(() => import('@/features/admin/pages/AdminProjects'));
 const AdminProjectDetail = lazy(() => import('@/features/admin/pages/AdminProjectDetail'));
+const AdminSettings = lazy(() => import('@/features/admin/pages/AdminSettings'));
 
 
 const Loading = () => (
@@ -73,6 +74,9 @@ function AppRoutes() {
                 } />
                 <Route path="/admin/projects/:id" element={
                     <AdminRoute><AdminProjectDetail /></AdminRoute>
+                } />
+                <Route path="/admin/settings" element={
+                    <AdminRoute><AdminSettings /></AdminRoute>
                 } />
 
                 <Route path="*" element={<Navigate to="/login" replace />} />
