@@ -79,5 +79,9 @@ export const adminService = {
 
     async deleteImage(id: string) {
         return api.delete(`/admin/images/${id}`);
+    },
+
+    async deleteUser(id: string) {
+        return api.delete(`/admin/users/${id}`);
     }
 };

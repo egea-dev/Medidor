@@ -75,6 +75,21 @@ export default function AdminUsers() {
         }
     };
 
+    const handleDeleteUser = async (userId: string, email: string | null) => {
+        if (!window.confirm(`¿⚠️ ELIMINAR COMPLETAMENTE el usuario "${email}"? Esta acción borrará todos sus proyectos y datos permanentemente y no se puede deshacer.`)) return;
+
+        setActionLoading(userId + '_delete');
+        try {
+            await adminService.deleteUser(userId);
+            setUsers(prev => prev.filter(u => u.id !== userId));
+            alert('Usuario eliminado correctamente');
+        } catch (e: any) {
+            alert(e.response?.data?.message || 'Error al eliminar usuario');
+        } finally {
+            setActionLoading(null);
+        }
+    };
+
     const handleAvatarClick = (userId: string) => {
         setSelectedUserId(userId);
         if (fileInputRef.current) {
@@ -294,6 +309,14 @@ export default function AdminUsers() {
                                             {actionLoading === u.id + '_status' ? <Loader2 size={12} className="animate-spin" /> : u.is_active ? <XCircle size={12} /> : <CheckCircle size={12} />}
                                             {u.is_active ? 'Baja' : 'Alta'}
                                         </button>
+                                        <button
+                                            onClick={() => handleDeleteUser(u.id, u.email)}
+                                            disabled={actionLoading === u.id + '_delete'}
+                                            className="flex items-center justify-center gap-1.5 py-2 text-[11px] font-bold rounded-xl border transition-all bg-red-600 text-white hover:bg-red-700"
+                                        >
+                                            {actionLoading === u.id + '_delete' ? <Loader2 size={12} className="animate-spin" /> : <XCircle size={12} />}
+                                            Eliminar
+                                        </button>
                                     </div>
                                 </div>
                             ))}
@@ -387,6 +410,15 @@ export default function AdminUsers() {
                                                     >
                                                         {actionLoading === u.id + '_status' ? <Loader2 size={12} className="animate-spin" /> : u.is_active ? <XCircle size={12} /> : <CheckCircle size={12} />}
                                                         {u.is_active ? 'Desactivar' : 'Activar'}
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteUser(u.id, u.email)}
+                                                        disabled={actionLoading === u.id + '_delete'}
+                                                        className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-lg border border-red-200 bg-red-600 text-white hover:bg-red-700 transition-all hover:shadow-sm"
+                                                        title="Eliminar permanentemente"
+                                                    >
+                                                        {actionLoading === u.id + '_delete' ? <Loader2 size={12} className="animate-spin" /> : <XCircle size={12} />}
+                                                        Borrar
                                                     </button>
                                                 </div>
                                             </td>

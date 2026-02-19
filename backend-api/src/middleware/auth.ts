@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 
 const JWT_SECRET = process.env.JWT_SECRET || 'secret';
 
-export interface AuthRequest extends Request {
+export interface AuthRequest extends Request<any, any, any, any> {
     userId?: string;
     userRole?: string;
 }

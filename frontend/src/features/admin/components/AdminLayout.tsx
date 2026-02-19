@@ -10,6 +10,7 @@ import {
     ChevronRight,
     ArrowLeft,
     Shield,
+    Settings
 } from 'lucide-react';
 import { useAuth } from '@/features/auth/AuthProvider';
 
@@ -17,6 +18,7 @@ const navItems = [
     { path: '/admin', icon: LayoutDashboard, label: 'Dashboard', end: true },
     { path: '/admin/users', icon: Users, label: 'Usuarios' },
     { path: '/admin/projects', icon: FolderKanban, label: 'Proyectos' },
+    { path: '/admin/settings', icon: Settings, label: 'Ajustes' },
 ];
 
 interface AdminLayoutProps {
