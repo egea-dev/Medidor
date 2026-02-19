@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
+import { v4 as uuidv4 } from 'uuid';
 import { query } from '../config/database';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 
@@ -17,24 +18,21 @@ router.post('/register', async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(password, 10);
+        const userId = uuidv4();
 
         // 1. Crear usuario
-        const result: any = await query(
-            'INSERT INTO users (email, password) VALUES (?, ?)',
-            [email, hashedPassword]
+        await query(
+            'INSERT INTO users (id, email, password) VALUES (?, ?, ?)',
+            [userId, email, hashedPassword]
         );
 
-        // Obtener el ID generado por el trigger/default UUID (en MySQL 8 con UUID() default)
-        // Pero INSERT INTO no devuelve el UUID generado fácilmente con mysql2. 
-        // Mejor hacer el UUID en el backend para tener control total.
+        // 2. Crear perfil inicial
+        await query(
+            'INSERT INTO user_profiles (id, full_name, role, is_active) VALUES (?, ?, "user", 1)',
+            [userId, fullName || null]
+        );
 
-        // Re-haciendo lógica con UUID manual para evitar problemas de ID
-        /* 
-        const userId = uuidv4();
-        await query('INSERT INTO users (id, email, password) VALUES (?, ?, ?)', ...);
-        */
-
-        res.status(201).json({ message: 'Usuario creado correctamente' });
+        res.status(201).json({ message: 'Usuario creado correctamente', id: userId });
     } catch (error: any) {
         if (error.code === 'ER_DUP_ENTRY') {
             return res.status(400).json({ message: 'El email ya está registrado' });

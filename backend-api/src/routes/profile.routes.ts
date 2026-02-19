@@ -15,15 +15,23 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get('/me', authenticateToken, async (req: AuthRequest, res: Response) => {
     try {
         const results: any = await query(
-            'SELECT up.*, u.email FROM user_profiles up JOIN users u ON up.id = u.id WHERE up.id = ?',
+            `SELECT u.id, u.email, up.full_name, up.role, up.phone, up.company, up.avatar_url, up.is_active 
+             FROM users u 
+             LEFT JOIN user_profiles up ON u.id = up.id 
+             WHERE u.id = ?`,
             [req.userId]
         );
 
         if (results.length === 0) {
-            return res.status(404).json({ message: 'Perfil no encontrado' });
+            return res.status(404).json({ message: 'Usuario no encontrado' });
         }
 
-        res.json(results[0]);
+        const userProfile = results[0];
+        // Asegurar que el objeto tiene la estructura esperada aunque falte el perfil
+        if (!userProfile.role) userProfile.role = 'user';
+        if (userProfile.is_active === null) userProfile.is_active = 1;
+
+        res.json(userProfile);
     } catch (error) {
         res.status(500).json({ message: 'Error obteniendo perfil' });
     }
